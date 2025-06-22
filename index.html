@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>قطعة أرض سكنية برقم ومعلومات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js"></script>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZm1vcSIsImEiOiJjbWM3cXpkMGIwMXNqMm1zYWNlM3A4aGF1In0.DPnFXiDw2HMRy3rPnw8V-A';
+
+    mapboxgl.setRTLTextPlugin(
+      'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
+      null,
+      true
+    );
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [43.9315, 26.39635],
+      zoom: 19
+    });
+
+    const plots = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            title: 'قطعة سكنية',
+            number: '1',
+            status: 'متاحة',
+            color: '#00cc66',
+            area: '300 م²',
+            price: '1,000,000 ريال',
+            type: 'سكنية',
+            note: 'موقع ممتاز داخل حي النهضة'
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [43.93142135515229, 26.396405063269828],
+              [43.931479693197076, 26.39625970824177],
+              [43.93166275395832, 26.396322174887835],
+              [43.93158564045084, 26.396460322158113],
+              [43.93142135515229, 26.396405063269828]
+            ]]
+          }
+        }
+      ]
+    };
+
+    map.on('load', () => {
+      map.addSource('plots', { type: 'geojson', data: plots });
+
+      map.addLayer({
+        id: 'plots-fill',
+        type: 'fill',
+        source: 'plots',
+        paint: {
+          'fill-color': ['get', 'color'],
+          'fill-opacity': 0.5
+        }
+      });
+
+      map.addLayer({
+        id: 'plots-outline',
+        type: 'line',
+        source: 'plots',
+        paint: {
+          'line-color': '#000',
+          'line-width': 1
+        }
+      });
+
+      map.addLayer({
+        id: 'plots-labels',
+        type: 'symbol',
+        source: 'plots',
+        layout: {
+          'text-field': ['get', 'number'],
+          'text-size': 16,
+          'text-anchor': 'center'
+        },
+        paint: {
+          'text-color': '#000000',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1
+        }
+      });
+
+      map.on('click', 'plots-fill', (e) => {
+        const props = e.features[0].properties;
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <strong>رقم القطعة:</strong> ${props.number}<br>
+            <strong>الحالة:</strong> ${props.status}<br>
+            <strong>النوع:</strong> ${props.type}<br>
+            <strong>المساحة:</strong> ${props.area}<br>
+            <strong>السعر:</strong> ${props.price}<br>
+            <strong>ملاحظات:</strong> ${props.note}
+          `)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'plots-fill', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.on('mouseleave', 'plots-fill', () => {
+        map.getCanvas().style.cursor = '';
+      });
+    });
+  </script>
+</body>
+</html>
