@@ -8,9 +8,21 @@
   <style>
     body, html { margin: 0; padding: 0; height: 100%; }
     #map { width: 100%; height: 100vh; }
+    #logo {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+    }
+    #logo img {
+      height: 40px;
+    }
   </style>
 </head>
 <body>
+  <div id="logo">
+    <img src="Untitled-1.png" alt="شعار الموقع">
+  </div>
   <div id="map"></div>
 
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -83,7 +95,7 @@
           type: 'Feature',
           properties: {
             number: '3',
-            status: 'متاحة',
+            status: 'تجارية',
             area: '1000 م²',
             price: '2,000,000 ريال',
             type: 'تجارية',
@@ -100,28 +112,48 @@
               [43.94485148251178, 26.366670317944635]
             ]]
           }
+        },
+        {
+          type: 'Feature',
+          properties: {
+            number: '4',
+            status: 'متاحة',
+            area: '500 م²',
+            price: 'على السوم',
+            type: 'سكنية',
+            note: 'لا يوجد',
+            color: '#00cc66'
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [43.92393469477107, 26.38333881837573],
+              [43.924125860890086, 26.383362365860375],
+              [43.9241640941139, 26.3831504383257],
+              [43.92396336968893, 26.383135453535793],
+              [43.92393469477107, 26.38333881837573]
+            ]]
+          }
         }
       ]
     };
 
     map.on('load', () => {
-      const availablePlots = plots.features.filter(f => f.properties.status === 'متاحة' || f.properties.status === 'إيجار');
+      const availablePlots = plots.features;
       const availableCount = availablePlots.length;
 
       const cityMarker = {
         type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: {
-              name: `بريدة (${availableCount} قطع متاحة)`
-            },
-            geometry: {
-              type: 'Point',
-              coordinates: [43.965, 26.370]
-            }
+        features: [{
+          type: 'Feature',
+          properties: {
+            name: `بريدة (${availableCount} قطع متاحة)`
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [43.965, 26.370]
           }
-        ]
+        }]
       };
 
       map.addSource('city-marker', { type: 'geojson', data: cityMarker });
@@ -154,9 +186,7 @@
             'text-color': '#cc0000',
             'text-halo-color': '#ffffff',
             'text-halo-width': 2
-          },
-          minzoom: 0,
-          maxzoom: 22
+          }
         });
 
         map.on('click', 'city-marker-layer', () => {
@@ -222,7 +252,14 @@
           lat /= coords.length;
           return {
             type: 'Feature',
-            properties: { number: f.properties.number },
+            properties: { 
+              number: f.properties.number,
+              status: f.properties.status,
+              type: f.properties.type,
+              area: f.properties.area,
+              price: f.properties.price,
+              note: f.properties.note
+            },
             geometry: {
               type: 'Point',
               coordinates: [lng, lat]
@@ -233,34 +270,69 @@
 
       map.addSource('plot-markers', { type: 'geojson', data: plotMarkers });
 
-      map.loadImage('https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png', (err, img) => {
-        if (err) throw err;
-        if (!map.hasImage('plot-pin')) map.addImage('plot-pin', img);
-
-        map.addLayer({
-          id: 'plot-markers-layer',
-          type: 'symbol',
-          source: 'plot-markers',
-          layout: {
-            'icon-image': 'plot-pin',
-            'icon-size': 0.8,
-            'icon-allow-overlap': true,
-            'visibility': 'none'
-          }
-        });
+      map.addLayer({
+        id: 'plot-markers-layer',
+        type: 'circle',
+        source: 'plot-markers',
+        layout: { 'visibility': 'none' },
+        paint: {
+          'circle-radius': 10,
+          'circle-color': [
+            'match',
+            ['get', 'status'],
+            'متاحة', '#00cc66',
+            'إيجار', '#ffcc00',
+            'تجارية', '#3366ff',
+            '#000000'
+          ],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2
+        }
       });
 
+      // Popup on polygon click
       map.on('click', 'plots-fill', (e) => {
         const props = e.features[0].properties;
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(`
-            <strong>رقم القطعة:</strong> ${props.number}<br>
-            <strong>الحالة:</strong> ${props.status}<br>
-            <strong>النوع:</strong> ${props.type}<br>
-            <strong>المساحة:</strong> ${props.area}<br>
-            <strong>السعر:</strong> ${props.price}<br>
-            <strong>ملاحظات:</strong> ${props.note}
+            <div style="font-family:sans-serif; direction:rtl;">
+              <div style="font-weight:bold; margin-bottom:8px; text-align:center;">التفاصيل</div>
+              <div style="display:grid; grid-template-columns:repeat(2, auto); gap:6px;">
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">رقم القطعة:<br><strong>${props.number}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">الحالة:<br><strong>${props.status}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">النوع:<br><strong>${props.type}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">المساحة:<br><strong>${props.area}</strong></div>
+                <div style="grid-column:1/span 2; background:#f5f5f5; padding:5px; border-radius:4px;">السعر:<br><strong>${props.price}</strong></div>
+                <div style="grid-column:1/span 2; background:#f5f5f5; padding:5px; border-radius:4px;">ملاحظات:<br><strong>${props.note}</strong></div>
+              </div>
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      // Popup on marker click + flyTo
+      map.on('click', 'plot-markers-layer', (e) => {
+        const coords = e.features[0].geometry.coordinates;
+        const props = e.features[0].properties;
+        map.flyTo({
+          center: coords,
+          zoom: 17
+        });
+        new mapboxgl.Popup()
+          .setLngLat(coords)
+          .setHTML(`
+            <div style="font-family:sans-serif; direction:rtl;">
+              <div style="font-weight:bold; margin-bottom:8px; text-align:center;">التفاصيل</div>
+              <div style="display:grid; grid-template-columns:repeat(2, auto); gap:6px;">
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">رقم القطعة:<br><strong>${props.number}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">الحالة:<br><strong>${props.status}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">النوع:<br><strong>${props.type}</strong></div>
+                <div style="background:#f5f5f5; padding:5px; border-radius:4px;">المساحة:<br><strong>${props.area}</strong></div>
+                <div style="grid-column:1/span 2; background:#f5f5f5; padding:5px; border-radius:4px;">السعر:<br><strong>${props.price}</strong></div>
+                <div style="grid-column:1/span 2; background:#f5f5f5; padding:5px; border-radius:4px;">ملاحظات:<br><strong>${props.note}</strong></div>
+              </div>
+            </div>
           `)
           .addTo(map);
       });
@@ -268,7 +340,6 @@
       map.on('mouseenter', 'plots-fill', () => {
         map.getCanvas().style.cursor = 'pointer';
       });
-
       map.on('mouseleave', 'plots-fill', () => {
         map.getCanvas().style.cursor = '';
       });
