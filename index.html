@@ -79,13 +79,17 @@
     max-height: 40px;
   }
 }
-      #footer-image {
+#footer-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  background: #ffffff; /* لو تبي لون خلفية */
+  background: #ffffff; /* لون خلفية، يمكنك تغييره أو جعله شفاف */
   text-align: center;
-  padding: 10px 0;
+  z-index: 9999;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1); /* ظل من الأعلى */
 }
-#footer-image img {
+#footer-fixed img {
   max-height: 50px;
   height: auto;
   width: auto;
@@ -93,9 +97,11 @@
   display: block;
 }
 @media (max-width: 600px) {
-  #footer-image img {
+  #footer-fixed img {
     max-height: 40px;
   }
+}
+
 }
 
 
