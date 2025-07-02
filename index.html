@@ -57,6 +57,29 @@
       #logo img {
         max-height: 40px;
       }
+      #header-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #ffffff; /* لون الخلفية */
+  padding: 5px 0;
+  text-align: center; /* وسط */
+  z-index: 9999;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#header-bar img {
+  max-height: 50px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+@media (max-width: 600px) {
+  #header-bar img {
+    max-height: 40px;
+  }
+}
+
     }
 
     
