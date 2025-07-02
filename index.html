@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -35,7 +37,7 @@
     }
     @media (max-width: 600px) {
       #logo img {
-        max-height: 40px;
+        max-height: 100px;
       }
     }
     #legend {
@@ -191,13 +193,21 @@
     };
 
     map.on('load', () => {
-      const availableCount = plots.features.length;
+      const availablePlots = plots.features;
+      const availableCount = availablePlots.length;
+
+      // الدبوس الرئيسي
       const cityMarker = {
         type: 'FeatureCollection',
         features: [{
           type: 'Feature',
-          properties: { name: `بريدة (${availableCount} قطع متاحة)` },
-          geometry: { type: 'Point', coordinates: [43.965, 26.370] }
+          properties: {
+            name: `بريدة (${availableCount} قطع متاحة)`
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [43.965, 26.370]
+          }
         }]
       };
 
@@ -228,13 +238,29 @@
             ]
           },
           paint: {
-            'text-color': '#000000', /* اللون الأسود للنص */
+            'text-color': '#000000', /* لون النص أسود */
             'text-halo-color': '#ffffff',
             'text-halo-width': 2
           }
         });
+
+        // عند الضغط على الدبوس
+        map.on('click', 'city-marker-layer', () => {
+          map.setLayoutProperty('city-marker-layer', 'visibility', 'none');
+
+          const bounds = new mapboxgl.LngLatBounds();
+          availablePlots.forEach(f => {
+            f.geometry.coordinates[0].forEach(coord => bounds.extend(coord));
+          });
+          map.fitBounds(bounds, { padding: 100 });
+
+          if (map.getLayer('plot-markers-layer')) {
+            map.setLayoutProperty('plot-markers-layer', 'visibility', 'visible');
+          }
+        });
       });
 
+      // باقي الكود كالسابق
       map.addSource('plots', { type: 'geojson', data: plots });
 
       map.addLayer({
@@ -271,6 +297,51 @@
           'text-halo-color': '#ffffff',
           'text-halo-width': 1
         }
+      });
+
+      const plotMarkers = {
+        type: 'FeatureCollection',
+        features: availablePlots.map(f => {
+          const coords = f.geometry.coordinates[0];
+          let lng = 0, lat = 0;
+          coords.forEach(c => { lng += c[0]; lat += c[1]; });
+          lng /= coords.length;
+          lat /= coords.length;
+          return {
+            type: 'Feature',
+            properties: { 
+              number: f.properties.number,
+              status: f.properties.status,
+              type: f.properties.type,
+              area: f.properties.area,
+              price: f.properties.price,
+              note: f.properties.note
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: [lng, lat]
+            }
+          };
+        })
+      };
+
+      map.addSource('plot-markers', { type: 'geojson', data: plotMarkers });
+
+      map.loadImage('https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png', (err, img) => {
+        if (err) throw err;
+        if (!map.hasImage('plot-pin')) map.addImage('plot-pin', img);
+
+        map.addLayer({
+          id: 'plot-markers-layer',
+          type: 'symbol',
+          source: 'plot-markers',
+          layout: {
+            'icon-image': 'plot-pin',
+            'icon-size': 0.8,
+            'icon-allow-overlap': true,
+            'visibility': 'none'
+          }
+        });
       });
 
       map.on('click', 'plots-fill', (e) => {
