@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -61,7 +56,7 @@
 </head>
 <body>
   <div id="logo">
-<img src="https://raw.githubusercontent.com/deem43218/map/main/Untitled-1.png" alt="شعار الموقع">
+    <img src="Untitled-1.png" alt="شعار الموقع">
   </div>
   <div id="legend">
     <div><span style="background:#00cc66"></span> متاحة</div>
@@ -153,6 +148,7 @@
     map.on('load', () => {
       const availableCount = plots.features.length;
 
+      // الدبوس الرئيسي دائرة سوداء
       const cityMarker = {
         type: 'FeatureCollection',
         features: [{
@@ -169,41 +165,49 @@
 
       map.addSource('city-marker', { type: 'geojson', data: cityMarker });
 
-      map.loadImage('https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png', (err, img) => {
-        if (err) throw err;
-        if (!map.hasImage('custom-marker')) map.addImage('custom-marker', img);
-
-        map.addLayer({
-          id: 'city-marker-layer',
-          type: 'symbol',
-          source: 'city-marker',
-          layout: {
-            'icon-image': 'custom-marker',
-            'text-field': ['get', 'name'],
-            'text-offset': [0, 1.5],
-            'text-anchor': 'top',
-            'text-size': 14
-          },
-          paint: {
-            'text-color': '#000000',
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 2
-          }
-        });
-
-        map.on('click', 'city-marker-layer', () => {
-          map.setLayoutProperty('city-marker-layer', 'visibility', 'none');
-
-          const bounds = new mapboxgl.LngLatBounds();
-          plots.features.forEach(f => {
-            f.geometry.coordinates[0].forEach(coord => bounds.extend(coord));
-          });
-          map.fitBounds(bounds, { padding: 100 });
-
-          map.setLayoutProperty('plot-markers-layer', 'visibility', 'visible');
-        });
+      // دائرة سوداء للدبوس
+      map.addLayer({
+        id: 'city-marker-circle',
+        type: 'circle',
+        source: 'city-marker',
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#000000'
+        }
       });
 
+      // نص أسود للدبوس
+      map.addLayer({
+        id: 'city-marker-text',
+        type: 'symbol',
+        source: 'city-marker',
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-size': 14,
+          'text-anchor': 'top',
+          'text-offset': [0, 1.5]
+        },
+        paint: {
+          'text-color': '#000000',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2
+        }
+      });
+
+      map.on('click', 'city-marker-circle', () => {
+        map.setLayoutProperty('city-marker-circle', 'visibility', 'none');
+        map.setLayoutProperty('city-marker-text', 'visibility', 'none');
+
+        const bounds = new mapboxgl.LngLatBounds();
+        plots.features.forEach(f => {
+          f.geometry.coordinates[0].forEach(coord => bounds.extend(coord));
+        });
+        map.fitBounds(bounds, { padding: 100 });
+
+        map.setLayoutProperty('plot-markers-layer', 'visibility', 'visible');
+      });
+
+      // الأراضي
       map.addSource('plots', { type: 'geojson', data: plots });
 
       map.addLayer({
@@ -217,7 +221,7 @@
             'متاحة', '#00cc66',
             'إيجار', '#ffcc00',
             'تجارية', '#3366ff',
-            '#000000'
+            '#000'
           ],
           'fill-opacity': 0.5
         }
@@ -230,22 +234,6 @@
         paint: {
           'line-color': '#000',
           'line-width': 1
-        }
-      });
-
-      map.addLayer({
-        id: 'plots-labels',
-        type: 'symbol',
-        source: 'plots',
-        layout: {
-          'text-field': ['get', 'number'],
-          'text-size': 16,
-          'text-anchor': 'center'
-        },
-        paint: {
-          'text-color': '#000000',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 1
         }
       });
 
@@ -282,7 +270,7 @@
             'تجارية', '#3366ff',
             '#000'
           ],
-          'circle-stroke-color': '#ffffff',
+          'circle-stroke-color': '#fff',
           'circle-stroke-width': 2
         }
       });
@@ -303,9 +291,6 @@
           `)
           .addTo(map);
       });
-
-      map.on('mouseenter', 'plots-fill', () => map.getCanvas().style.cursor = 'pointer');
-      map.on('mouseleave', 'plots-fill', () => map.getCanvas().style.cursor = '');
     });
   </script>
 </body>
